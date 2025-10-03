@@ -1,22 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Batch } from './batch.entity';
 import { User } from './user.entity';
 import { QRCode } from './qrcode.entity';
 
-@Entity()
+@Entity('product')
 export class Product {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn() id: number;
 
-  @Column()
-  name: string;
+  @Column() name: string;
+  @Column({ nullable: true }) sku?: string;
 
-  @ManyToOne(() => User, (user) => user.products)
+  @ManyToOne(() => User, u => u.products, { nullable: true })
+  @JoinColumn({ name: 'ownerId' })          // tạo cột ownerId rõ ràng
   owner: User;
 
-  @OneToMany(() => QRCode, (qrcode) => qrcode.product)
-  qrcodes: QRCode[];
-
-  @OneToMany(() => Batch, (batch) => batch.product)
-  batches: Batch[];
+  @OneToMany(() => QRCode, q => q.product) qrcodes: QRCode[];
+  @OneToMany(() => Batch,  b => b.product) batches: Batch[];
 }

@@ -1,20 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from 'typeorm';
 import { Product } from './product.entity';
 
-@Entity()
+@Entity('batch')
 export class Batch {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn() id: number;
 
-  @Column()
-  batchCode: string;
+  @Index({ unique: true }) @Column() batchCode: string;
+  @Column({ type: 'date' }) productionDate: Date;
+  @Column({ type: 'date' }) expiryDate: Date;
 
-  @Column({ type: 'date' })
-  productionDate: Date;
-
-  @Column({ type: 'date' })
-  expiryDate: Date;
-
-  @ManyToOne(() => Product, (product) => product.batches)
+  @ManyToOne(() => Product, (p) => p.batches, { nullable: false, onDelete: 'CASCADE' })
   product: Product;
 }
