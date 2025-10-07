@@ -9,5 +9,6 @@ import { ScanlogController } from './scanlog.controller';
   imports: [TypeOrmModule.forFeature([ScanLog, QRCode])],
   providers: [ScanlogService],
   controllers: [ScanlogController],
+  exports: [ScanlogService],
 })
 export class ScanlogModule {}

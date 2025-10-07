@@ -9,5 +9,6 @@ import { QrcodeController } from './qrcode.controller';
   imports: [TypeOrmModule.forFeature([QRCode, Product])],
   providers: [QrcodeService],
   controllers: [QrcodeController],
+  exports: [QrcodeService], 
 })
 export class QrcodeModule {}

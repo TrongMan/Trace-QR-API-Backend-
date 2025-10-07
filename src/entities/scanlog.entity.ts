@@ -1,20 +1,27 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { QRCode } from './qrcode.entity';
 
-@Entity()
+@Entity({ name: 'scan_log' })
 export class ScanLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  scannedAt: Date;
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 
-  @Column({ nullable: true })
-  location: string;
+  @Column({ type: 'text', nullable: true, default: null })
+  location: string | null;
 
-  @Column({ nullable: true })
-  device: string;
+  @Column({ type: 'text', nullable: true, default: null })
+  device: string | null;
 
-  @ManyToOne(() => QRCode, (qr) => qr.logs)
+  @Column({ type: 'text', nullable: true, default: null })
+  ip: string | null;
+
+  @Column({ type: 'text', nullable: true, default: null })
+  userAgent: string | null;
+
+  @ManyToOne(() => QRCode, (q) => q.logs, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'qrcodeId' })
   qrcode: QRCode;
 }
