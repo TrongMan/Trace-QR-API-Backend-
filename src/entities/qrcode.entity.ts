@@ -9,8 +9,11 @@ export class QRCode {
 
   @Column({ unique: true })
   code: string;
+  
+  
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+
+  @CreateDateColumn({ name: 'createdAt', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
   @ManyToOne(() => Product, (product) => product.qrcodes, { onDelete: 'SET NULL', nullable: true })

@@ -9,7 +9,7 @@ export class ScanLog {
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ type: 'text', nullable: true, default: null })
+  @Column({   type: 'text', nullable: true, default: null })
   location: string | null;
 
   @Column({ type: 'text', nullable: true, default: null })

@@ -1,5 +1,4 @@
-
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsObject, IsIP } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateScanLogDto {
@@ -9,6 +8,16 @@ export class CreateScanLogDto {
 
   @IsOptional() @IsString() location?: string;
   @IsOptional() @IsString() device?: string;
-  @IsOptional() @IsString() ip?: string;
+
+  // Gợi ý: Dùng @IsIP() để validate địa chỉ IP tốt hơn
+  @IsOptional()
+  @IsIP()
+  ip?: string;
+
   @IsOptional() @IsString() userAgent?: string;
+
+  // Thêm thuộc tính này vào để sửa lỗi
+  @IsOptional()
+  @IsObject()
+  meta?: object;
 }

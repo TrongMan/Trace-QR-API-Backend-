@@ -9,6 +9,7 @@ import { QRCode } from './entities/qrcode.entity';
 import { ScanLog } from './entities/scanlog.entity';
 import { Batch } from './entities/batch.entity';
 
+
 // Feature modules
 import { UserModule } from './user/user.module';
 import { ProductModule } from './product/product.module';
@@ -16,6 +17,7 @@ import { QrcodeModule } from './qrcode/qrcode.module';
 import { ScanlogModule } from './scanlog/scanlog.module';
 import { PublicModule } from './public/public.module';
 import { BatchModule } from './batch/batch.module';
+import { ProcessStepModule } from './process-step/process-step.module';
 
 @Module({
   imports: [
@@ -34,6 +36,7 @@ import { BatchModule } from './batch/batch.module';
     ScanlogModule,
     PublicModule,
     BatchModule,
+    ProcessStepModule,
   ],
 })
 export class AppModule {}
