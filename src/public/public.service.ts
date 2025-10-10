@@ -1,97 +1,89 @@
+// src/public/public.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { QrcodeService } from '../qrcode/qrcode.service';
+import { Repository } from 'typeorm';
 import { ScanLog } from '../entities/scanlog.entity';
 import { Batch } from '../entities/batch.entity';
+import { QRCode } from '../entities/qrcode.entity';
+import { QrcodeService } from '../qrcode/qrcode.service';
 import { ProcessStep } from '../entities/process-step.entity';
 
 @Injectable()
 export class PublicService {
   constructor(
     private readonly qrcodeService: QrcodeService,
-    @InjectRepository(ScanLog) private readonly logRepo: Repository<ScanLog>,
+    @InjectRepository(ScanLog) private readonly scanlogRepo: Repository<ScanLog>,
     @InjectRepository(Batch) private readonly batchRepo: Repository<Batch>,
-    @InjectRepository(ProcessStep) private readonly stepRepo: Repository<ProcessStep>, 
+    @InjectRepository(QRCode) private readonly qrRepo: Repository<QRCode>, // giữ 1 repo duy nhất
   ) {}
 
   async traceByCode(code: string) {
-    const qr = await this.qrcodeService.findByCode(code);
-    if (!qr) {
-      throw new NotFoundException('QR code không tồn tại');
-    }
-    if (!qr.product?.id) {
-      throw new NotFoundException('Product không gắn với QR code');
-    }
+    // Load QR kèm product để chắc chắn có product.id
+    const qrBasic = await this.qrcodeService.findByCode(code);
+    const qrcode = await this.qrRepo.findOne({
+      where: { id: qrBasic?.id ?? 0, code },
+      relations: { product: true },
+    });
+    if (!qrcode) throw new NotFoundException('QR code không tồn tại');
+    if (!qrcode.product?.id) throw new NotFoundException('Product không gắn với QR code');
 
+    const product = qrcode.product;
+
+    // Batches + steps
     const batches = await this.batchRepo.find({
-      where: { product: { id: qr.product.id } },
+      where: { product: { id: product.id } },
+      relations: { processSteps: true },
       order: { id: 'DESC' },
-      take: 5,
     });
 
-    const logs = await this.logRepo.find({
-      where: { qrcode: { id: qr.id } },
-      order: { createdAt: 'DESC' }, // Sắp xếp theo thời gian quét
-      take: 5,
-    });
-
-    // --- PHẦN LOGIC MỚI ĐỂ LẤY PROCESS STEPS ---
-    let stepsByBatchId: Record<number, ProcessStep[]> = {};
-    if (batches.length > 0) {
-      const batchIds = batches.map((b) => b.id);
-
-  
-      const allSteps = await this.stepRepo.find({
-        where: {
-          batch: { id: In(batchIds) }, // Dùng toán tử In() là cách làm chuẩn của TypeORM
-        },
-        order: {
-          stepOrder: 'ASC', // Sắp xếp các bước theo đúng thứ tự
-          id: 'ASC',
-        },
-      });
-
-      
-      for (const step of allSteps) {
-        if (!stepsByBatchId[step.batchId]) {
-          stepsByBatchId[step.batchId] = [];
-        }
-        stepsByBatchId[step.batchId].push(step);
+    for (const b of batches) {
+      if (b.processSteps?.length) {
+        b.processSteps.sort((a, z) => (a.stepOrder ?? 1) - (z.stepOrder ?? 1));
       }
     }
-    
 
+    // Logs của QR (đúng cột scannedAt)
+    const logs = await this.scanlogRepo.find({
+      where: { qrcode: { id: qrcode.id } },
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+    const asDate = (v: Date | string | null | undefined) =>
+      v ? (v instanceof Date ? v.toISOString().slice(0, 10) : String(v)) : null;
+
+    const asDateTime = (v: Date | string | null | undefined) =>
+      v ? (v instanceof Date ? v.toISOString() : String(v)) : null;
+
+
+    // Response
     return {
-      code: qr.code,
+      code: qrcode.code,
       product: {
-        id: qr.product.id,
-        name: qr.product.name,
-        sku: qr.product.sku,
+        id: product.id,
+        name: product.name,
+        sku: product.sku ?? null,
       },
-      batches: batches.map((batch) => ({
-        id: batch.id,
-        batchCode: batch.batchCode,
-        productionDate: batch.productionDate,
-        expiryDate: batch.expiryDate,
-        
-        steps: (stepsByBatchId[batch.id] || []).map((s) => ({
+      batches: batches.map((b) => ({
+        id: b.id,
+        batchCode: b.batchCode,
+        productionDate: asDate(b.productionDate),
+        expiryDate: asDate(b.expiryDate),
+        steps: (b.processSteps ?? []).map((s) => ({
           id: s.id,
           stepName: s.stepName,
-          description: s.description,
           stepOrder: s.stepOrder,
-          startedAt: s.startedAt,
-          finishedAt: s.finishedAt,
-          meta: s.meta,
-          timestamp: s.createdAt,
+          description: s.description ?? null,
+          startedAt: s.startedAt?.toISOString() || null,
+          finishedAt: s.finishedAt?.toISOString() || null,
         })),
       })),
-      logs: logs.map((log) => ({
-        id: log.id,
-        scannedAt: log.createdAt,
-        ip: log.ip,
-        userAgent: log.userAgent,
+      logs: logs.map((l) => ({
+        id: l.id,
+        scannedAt: l.createdAt.toISOString(), // dùng đúng scannedAt
+        ip: l.ip ?? null,
+        userAgent: l.userAgent ?? null,
       })),
     };
+
   }
 }

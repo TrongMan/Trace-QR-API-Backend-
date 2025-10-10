@@ -18,6 +18,7 @@ import { ScanlogModule } from './scanlog/scanlog.module';
 import { PublicModule } from './public/public.module';
 import { BatchModule } from './batch/batch.module';
 import { ProcessStepModule } from './process-step/process-step.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ProcessStepModule } from './process-step/process-step.module';
     PublicModule,
     BatchModule,
     ProcessStepModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

@@ -1,17 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Bật global validation cho DTO
+  const config = new DocumentBuilder()
+    .setTitle('Trace QR API')
+    .setVersion('1.0')
+    .build();
+
+  const document = SwaggerModule.createDocument(app as any , config);
+  SwaggerModule.setup('api/docs', app as any , document);
+
   app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,      // loại bỏ field thừa
-      forbidNonWhitelisted: true, // báo lỗi nếu gửi field không có trong DTO
-      transform: true,      // tự động convert kiểu (string -> number, v.v.)
-    }),
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
   await app.listen(process.env.PORT ?? 3000);
